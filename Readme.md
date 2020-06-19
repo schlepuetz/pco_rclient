@@ -2,6 +2,12 @@
 # Overview
 Rest client script for the pco writer.
 
+# Installation
+
+```bash
+conda install -c paulscherrerinstitute pco_rclient
+```
+
 # Usage
 
 ## pco_rclient
