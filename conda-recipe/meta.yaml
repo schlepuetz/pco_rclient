@@ -1,0 +1,21 @@
+package:
+    name: pco_rclient
+    version: "{{ load_setup_py_data().version }}"
+source:
+    path: ..
+requirements:
+    build:
+        - python
+        - setuptools
+    run:
+        - python
+
+build:
+  noarch: python
+  number: 0
+  entry_points:
+    - pco_rclient = pco_rclient.rest_client:main
+
+about:
+    home: https://github.com/paulscherrerinstitute/pco_rclient
+    summary: "Rest client script for the pco writer."

@@ -1,0 +1,30 @@
+######################################
+# PCO.EDGE WRITER CONFIGURATION FILE #
+######################################
+
+# executable path
+exec_path = /home/hax_l/software/lib_cpp_h5_writer/tomcat/bin/tomcat_h5_writer
+
+# Connection address
+connection_address = tcp://pc9808:9999
+
+# Output file name
+output_file = output.h5
+
+# Total number of frames (0 for undefined)
+n_frames = 0
+
+# User id
+user_id = -1
+
+# Number of n_modules
+n_modules = 1 
+
+# Rest api port
+rest_api_port = 5555
+
+# Dataset file name
+dataset_name = data
+
+# Max frames per file
+max_frames_per_file = 20000
