@@ -1,9 +1,6 @@
 ######################################
 # PCO.EDGE WRITER CONFIGURATION FILE #
-######################################
-
-# executable path
-exec_path = /home/hax_l/software/lib_cpp_h5_writer/tomcat/bin/tomcat_h5_writer
+#####################################
 
 # Connection address
 connection_address = tcp://pc9808:9999

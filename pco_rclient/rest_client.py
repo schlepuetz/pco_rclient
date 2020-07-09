@@ -9,12 +9,14 @@ import subprocess
 from time import time, sleep
 import requests
 
-DEFAULT_SERVER_INTERFACE = 'localhost'
+DEFAULT_SERVER_INTERFACE = 'xbl-daq-32'
 DEFAULT_SERVER_PORT = 5555
+
+FLASK_SERVER_PORT = 9900
 
 # Rest API routes.
 ROUTES = {
-    "start": "/start",
+    "start_pco": "/api/start_pco_writer",
     "status":"/status",
     "stop": "/stop",
     "kill": "/kill"
@@ -22,16 +24,20 @@ ROUTES = {
 
 
 def parse_config_file(full_filename):
-    list_args = []
+
+    list_args = {}
     for line in open(full_filename):
         fields = line.split()
         if '=' in fields:
-            list_args.append(fields[-1])
+            list_args[fields[0]] = fields[-1]
     return list_args
 
 def validate_response(server_response):
-    print(server_response)
-    return
+    if not server_response['success']:
+         print(server_response['value'])
+         quit()
+    print("\nPCO Writer configurations successfully submitted to the server.\n")
+    return server_response
 
 
 def main():
@@ -68,12 +74,12 @@ def main():
     arguments = parser.parse_args()
 
     api_address = "http://%s:%s" % (DEFAULT_SERVER_INTERFACE, DEFAULT_SERVER_PORT)
-
+    flask_api_address = "http://%s:%s" % (DEFAULT_SERVER_INTERFACE, FLASK_SERVER_PORT)
 
 
     if arguments.command == 'stop':
         request_url = api_address + ROUTES["stop"]
-        try: 
+        try:
             response = requests.get(request_url).json()
             return validate_response(response)
         except Exception as e:
@@ -81,7 +87,7 @@ def main():
             quit()
     elif arguments.command == 'status':
         request_url = api_address + ROUTES["status"]
-        try: 
+        try:
             response = requests.get(request_url).json()
             return validate_response(response)
         except Exception as e:
@@ -89,7 +95,7 @@ def main():
             quit()
     elif arguments.command == 'kill':
         request_url = api_address + ROUTES["kill"]
-        try: 
+        try:
             response = requests.get(request_url).json()
             return validate_response(response)
         except Exception as e:
@@ -97,8 +103,16 @@ def main():
             quit()
     elif arguments.command == 'start' and arguments.config:
         args = parse_config_file(arguments.config[0])
-        # Workaround to use the rest client and run the writer
-        p = subprocess.run(parse_config_file(arguments.config[0]))
+        request_url = flask_api_address + ROUTES["start_pco"]
+        try:
+            response = requests.post(request_url, data=json.dumps(args)).json()
+            return validate_response(response)
+        except Exception as e:
+            print(e)
+            quit()
+    else:
+        parser.print_help()
+        exit(-1)
 
 if __name__ == "__main__":
     # execute only if run as a script
