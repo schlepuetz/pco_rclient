@@ -10,7 +10,7 @@ from time import time, sleep
 import requests
 
 DEFAULT_SERVER_INTERFACE = 'xbl-daq-32'
-DEFAULT_SERVER_PORT = 5555
+DEFAULT_SERVER_PORT = 9000
 
 FLASK_SERVER_PORT = 9900
 
@@ -32,12 +32,19 @@ def parse_config_file(full_filename):
             list_args[fields[0]] = fields[-1]
     return list_args
 
+def validate_response_from_writer(writer_response):
+    if writer_response['status'] != "receiving":
+        print("\nWriter is not receiving. Current status: %s.\n" % writer_response['status'])
+    else:
+        msg = "\Current status from the writer: %s.\n" % writer_response['status']
+        return msg
+
 def validate_response(server_response):
     if not server_response['success']:
          print(server_response['value'])
          quit()
     print("\nPCO Writer configurations successfully submitted to the server.\n")
-    return server_response
+    return True
 
 
 def main():
@@ -106,7 +113,15 @@ def main():
         request_url = flask_api_address + ROUTES["start_pco"]
         try:
             response = requests.post(request_url, data=json.dumps(args)).json()
-            return validate_response(response)
+            if validate_response(response):
+                # now retrieves status of the writer itself
+                request_url = api_address + ROUTES["status"]
+                try:
+                    response = requests.get(request_url).json()
+                    return validate_response_from_writer(response)
+                except Exception as e:
+                    print(e)
+                    quit()
         except Exception as e:
             print(e)
             quit()
