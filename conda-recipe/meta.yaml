@@ -9,6 +9,7 @@ requirements:
         - setuptools
     run:
         - python
+        - requests
 
 build:
   noarch: python
