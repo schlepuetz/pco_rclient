@@ -10,17 +10,30 @@ from time import time, sleep
 import requests
 
 DEFAULT_SERVER_INTERFACE = 'xbl-daq-32'
-DEFAULT_SERVER_PORT = 9000
+DEFAULT_SERVER_PORT = 9555
 
-FLASK_SERVER_PORT = 9900
+FLASK_SERVER_PORT = 9901
 
 # Rest API routes.
 ROUTES = {
-    "start_pco": "/api/start_pco_writer",
+    "start_pco": "/start_pco_writer",
     "status":"/status",
     "stop": "/stop",
     "kill": "/kill"
 }
+
+class NoTraceBackWithLineNumber(Exception):
+    def __init__(self, msg):
+        self.args = "{0.__name__} : {1}".format(type(self), msg),
+        if type(msg).__name__ == "ConnectionError":
+            print("\n ConnectionError error - it seems that the writer is not running (check ports, configuration file, etc). Please check and try again.\n")
+            sys.exit(-1)
+        else:
+            sys.exit(self)
+
+
+class PcoError(NoTraceBackWithLineNumber):
+    pass
 
 
 def parse_config_file(full_filename):
@@ -36,14 +49,15 @@ def validate_response_from_writer(writer_response):
     if writer_response['status'] != "receiving":
         print("\nWriter is not receiving. Current status: %s.\n" % writer_response['status'])
     else:
-        msg = "\Current status from the writer: %s.\n" % writer_response['status']
+        msg = "\nCurrent status from the writer: %s.\n" % writer_response['status']
         return msg
 
 def validate_response(server_response):
     if not server_response['success']:
          print(server_response['value'])
          quit()
-    print("\nPCO Writer configurations successfully submitted to the server.\n")
+    print("\nPCO Writer configurations successfully submitted to the server... Retrieving writer status...\n")
+    sleep(0.5)
     return True
 
 
@@ -90,24 +104,25 @@ def main():
             response = requests.get(request_url).json()
             return validate_response(response)
         except Exception as e:
-            print(e)
-            quit()
+            raise PcoError(e)
     elif arguments.command == 'status':
-        request_url = api_address + ROUTES["status"]
+        request_url = flask_api_address+ROUTES["status"]
         try:
             response = requests.get(request_url).json()
-            return validate_response(response)
+            msg = "Problem getting status from the writer..."
+            if response['success']:
+                msg = response['value']
+            print(msg)
+            sys.exit(0)
         except Exception as e:
-            print(e)
-            quit()
+            raise PcoError(e)
     elif arguments.command == 'kill':
         request_url = api_address + ROUTES["kill"]
         try:
             response = requests.get(request_url).json()
             return validate_response(response)
         except Exception as e:
-            print(e)
-            quit()
+            raise PcoError(e)
     elif arguments.command == 'start' and arguments.config:
         args = parse_config_file(arguments.config[0])
         request_url = flask_api_address + ROUTES["start_pco"]
@@ -120,11 +135,9 @@ def main():
                     response = requests.get(request_url).json()
                     return validate_response_from_writer(response)
                 except Exception as e:
-                    print(e)
-                    quit()
+                    raise PcoError(e)
         except Exception as e:
-            print(e)
-            quit()
+            raise PcoError(e)
     else:
         parser.print_help()
         exit(-1)
