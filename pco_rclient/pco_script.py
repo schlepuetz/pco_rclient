@@ -1,22 +1,12 @@
 from pco_controller import PcoWriter
 import time
-VERBOSE=True
-
-
-# TO BE DELETED ONCE IN PROD
-import os
-if os.path.exists("/tmp/output.h5"):
-    os.remove("/tmp/output.h5")
-
-if os.path.exists("/tmp/output_new.h5"):
-    os.remove("/tmp/output_new.h5")
 
 # instantiates one object of the PcoWriter controller
 pco_controller = PcoWriter(output_file='/tmp/output.h5', 
     dataset_name='data', 
-    connection_address="tcp://pc9808:9999", 
+    connection_address="https://129.129.95.47:8080", 
     n_frames=5, 
-    user_id=0)
+    user_id=503)
 
 #########################################
 # TEST USAGE WHEN WRITER IS NOT RUNNING #
