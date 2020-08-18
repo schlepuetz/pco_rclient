@@ -17,7 +17,7 @@ The pco_controller is meant for flexible usage and control of the pco writer fro
 
 ```python
 # Import the client.
-from pco_controller import PcoWriter
+from pco_rclient import PcoWriter
 
 # Connects to the PcoWriter controller
 pco_controller = PcoWriter(output_file='/tmp/output.h5', 
