@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/paulscherrerinstitute/pco_rclient/badge)](https://www.codefactor.io/repository/github/paulscherrerinstitute/pco_rclient) 
+
 
 # Overview
 Rest client script for the pco writer.
