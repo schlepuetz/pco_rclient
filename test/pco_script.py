@@ -1,10 +1,10 @@
-from pco_controller import PcoWriter
+from pco_rclient import PcoWriter
 import time
 VERBOSE=True
 # instantiates one object of the PcoWriter controller
 pco_controller = PcoWriter(output_file='./output.h5', 
     dataset_name='data', 
-    connection_address="https://129.129.95.47:8080", 
+    connection_address="https://129.129.95.47:8080",
     n_frames=5, 
     user_id=503)
 
@@ -35,13 +35,13 @@ pco_controller = PcoWriter(output_file='./output.h5',
 # START #
 #########
 # start the writer
-pco_controller.start_writer(VERBOSE)
-time.sleep(3)
+# pco_controller.start_writer(VERBOSE)
+# time.sleep(3)
 
 # gets status
 pco_controller.get_status(VERBOSE)
 # gets statistics
-pco_controller.get_statistics(VERBOSE)
+# pco_controller.get_statistics(VERBOSE)
 # sets config
 # pco_controller.set_configuration(output_file='./output_new.h5', 
 #     dataset_name='data_black', 
@@ -62,6 +62,6 @@ pco_controller.get_statistics(VERBOSE)
 # pco_controller.start_writer(VERBOSE)
 # time.sleep(3)
 # wait the writer
-pco_controller.wait_writer(VERBOSE)
+# pco_controller.wait_writer(VERBOSE)
 
 

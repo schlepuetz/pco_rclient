@@ -2,16 +2,11 @@
 """
 
 import os
-
 import requests
 import json
 import pprint
 import sys
-import zmq
-import threading
-from queue import Queue
 import time
-from subprocess import check_output
 import itertools
 
 import inspect
@@ -33,16 +28,7 @@ class PcoError(NoTraceBackWithLineNumber):
     pass
 
 class PcoWarning(NoTraceBackWithLineNumber):
-    pass
-
-def stat_put_routine(socket, q):
-    """statistics consumer for pco writer"""
-    filter_msg = b'statisticsWriter'
-    socket.setsockopt(zmq.SUBSCRIBE, filter_msg)
-    while True:
-        string  = socket.recv()
-        q.put(string)
-        
+    pass      
 
 # TODO implementation of validation methods
 def is_valid_connection_addres(connection_address):
