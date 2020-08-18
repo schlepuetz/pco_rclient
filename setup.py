@@ -14,5 +14,7 @@ setup(name='pco_rclient',
       maintainer_email="daq@psi.ch",
       url='https://github.com/paulscherrerinstitute/pco_rclient',
       license="GPL3",
-      packages=['pco_rclient'],
+      packages=['pco_rclient',
+                'pco_rclient.client'],
+      include_package_data=True
       )
