@@ -2,7 +2,7 @@ from pco_controller import PcoWriter
 import time
 VERBOSE=True
 # instantiates one object of the PcoWriter controller
-pco_controller = PcoWriter(output_file='/tmp/output.h5', 
+pco_controller = PcoWriter(output_file='./output.h5', 
     dataset_name='data', 
     connection_address="https://129.129.95.47:8080", 
     n_frames=5, 
@@ -24,7 +24,7 @@ pco_controller = PcoWriter(output_file='/tmp/output.h5',
 # # # wait the writer
 # pco_controller.wait_writer(VERBOSE)
 # # # sets config
-# pco_controller.set_configuration(output_file='/tmp/output_new.h5', 
+# pco_controller.set_configuration(output_file='./output_new.h5', 
 #     dataset_name='data_black', 
 #     connection_address="tcp://pc9808:9999", 
 #     n_frames=5,
@@ -43,7 +43,7 @@ pco_controller.get_status(VERBOSE)
 # gets statistics
 pco_controller.get_statistics(VERBOSE)
 # sets config
-# pco_controller.set_configuration(output_file='/tmp/output_new.h5', 
+# pco_controller.set_configuration(output_file='./output_new.h5', 
 #     dataset_name='data_black', 
 #     connection_address="tcp://pc9808:9999", 
 #     n_frames=5,
@@ -52,7 +52,7 @@ pco_controller.get_statistics(VERBOSE)
 # stop the writer
 # pco_controller.stop_writer(VERBOSE)
 # sets config
-# pco_controller.set_configuration(output_file='/tmp/output_new.h5', 
+# pco_controller.set_configuration(output_file='./output_new.h5', 
 #     dataset_name='data_white', 
 #     connection_address="tcp://pc9808:9999", 
 #     n_frames=5,
