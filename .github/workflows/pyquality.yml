@@ -1,4 +1,4 @@
-name: Python Pull Request Workflow
+name: Python Quality Workflow
 on: [workflow_dispatch]
 jobs:
 
