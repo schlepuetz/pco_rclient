@@ -6,6 +6,12 @@ Rest client script for the pco writer.
 
 # Installation
 
+To create a new conda environment with the package installed:
+```bash
+conda create --name <env-name> -c paulscherrerinstitute pco_rclient
+```
+
+To install the package on a previously existing conda environment:
 ```bash
 conda install -c paulscherrerinstitute pco_rclient
 ```
