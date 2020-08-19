@@ -2,9 +2,9 @@ from pco_rclient import PcoWriter
 import time
 VERBOSE=True
 # instantiates one object of the PcoWriter controller
-pco_controller = PcoWriter(output_file='./output.h5', 
+pco_controller = PcoWriter(output_file='/home/dbe/output/output.h5', 
     dataset_name='data', 
-    connection_address="https://129.129.95.47:8080",
+    connection_address="tcp://129.129.95.47:8080",
     n_frames=5, 
     user_id=503)
 
