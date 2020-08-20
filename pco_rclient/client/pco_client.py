@@ -21,8 +21,6 @@ class NoTraceBackWithLineNumber(Exception):
             ln = inspect.currentframe().f_back.f_lineno
         self.args = "{0.__name__} (line {1}): {2}".format(type(self), ln, msg),
         return None
-        # sys.exit(0)
-        # print(self)
 
 class PcoError(NoTraceBackWithLineNumber):
     pass
@@ -30,7 +28,7 @@ class PcoError(NoTraceBackWithLineNumber):
 class PcoWarning(NoTraceBackWithLineNumber):
     pass      
 
-# TODO implementation of validation methods
+# TODO implementation of proper validation tests
 def is_valid_connection_addres(connection_address):
     return True
 def is_valid_output_file(output_file):
@@ -38,8 +36,6 @@ def is_valid_output_file(output_file):
 def is_valid_n_frames(n_frames):
     return True
 def is_valid_user_id(user_id):
-    return True
-def is_valid_n_modules(n_modules):
     return True
 def is_valid_rest_port(rest_port):
     return True
@@ -52,44 +48,18 @@ def validate_statistics_response(writer_response, verbose=False):
     return writer_response
 
 def validate_response(server_response, verbose=False):
-    # print("\n\n\n\n server response", server_response, "\n\n\n\n")
     if not server_response['success']:
         print(server_response['value'])
         return False
     return True
 
 def validate_kill_response(writer_response, verbose=False):
-    # print("\n\n\n\n server response", server_response, "\n\n\n\n")
     if writer_response['status'] == "killed":
         if verbose:
             print(writer_response['status'])
         return True
     else:
         return False
-
-def wait_key():
-    ''' Wait for a key press on the console and return it. '''
-    result = None
-    if os.name == 'nt':
-        import msvcrt
-        result = msvcrt.getch()
-    else:
-        import termios
-        fd = sys.stdin.fileno()
-
-        oldterm = termios.tcgetattr(fd)
-        newattr = termios.tcgetattr(fd)
-        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-        termios.tcsetattr(fd, termios.TCSANOW, newattr)
-
-        try:
-            result = sys.stdin.read(1)
-        except IOError:
-            pass
-        finally:
-            termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
-
-    return result
 
 # Rest API routes.
 ROUTES = {
@@ -106,44 +76,43 @@ class PcoPcoError(Exception):
 class PcoWriter(object):
     """Proxy Class to control the PCO writer
     """
+    def __str__(self):
+        return "Proxy Class to control the PCO writer. It communicates with the flask server running on xbl-daq-32 and the writer process service (pco_writer_1)."
 
-    def __init__(self, output_file='', dataset_name='data', connection_address='https://129.129.95.47:8080', n_frames=0, 
-                user_id=503, n_modules=1, name='pco_writer', rest_api_port=9555, max_frames_per_file=20000):
-
-        self.statistics_monitor_address='tcp://*:8088'
+    def __init__(self, output_file='', dataset_name='data', connection_address='tcp://129.129.99.104:8080', n_frames=0,
+                user_id=503, max_frames_per_file=20000):
         self.connection_address = connection_address
-        self.name = name
-        self.rest_api_port = rest_api_port
-        # self._flask_api_address = "http://%s:%s" % ('xbl-daq-32', 9555)
-        # FLASK SERVER THAT LISTENS AND STARTS THE WRITER PROCESS
-        self.flask_api_address = "http://%s:%s" % ('localhost', 9901)
-        self.writer_api_address = "http://%s:%s" % ('localhost', self.rest_api_port)
+        self.flask_api_address = "http://%s:%s" % ('xbl-daq-32', 9901)
+        self.writer_api_address = "http://%s:%s" % ('xbl-daq-32', 9555)
         is_writer_running = self.is_running()
         if not is_writer_running:
             self.output_file = output_file
             self.dataset_name = dataset_name
-            self.n_frames = n_frames
-            self.max_frames_per_file = max_frames_per_file
-            self.n_modules = n_modules
-            self.user_id = user_id
+            if isinstance(n_frames, int):
+                self.n_frames = n_frames
+            if isinstance(max_frames_per_file, int):
+                self.max_frames_per_file = max_frames_per_file
+            if isinstance(user_id, int):
+                self.user_id = user_id
         else:
             print("\n Writer configuration can not be updated while PCO writer is running. Please, stop() the writer to change configuration.\n")
         
         self.configuration = self.validate_internal_configuration()
 
-    def set_configuration(self, output_file, dataset_name='data', connection_address='https://129.129.95.47:8080', n_frames=0, 
-                user_id=503, n_modules=1, name='pco_writer', rest_api_port=9555, max_frames_per_file=20000, verbose=False):
+    def set_configuration(self, output_file=None, dataset_name=None, n_frames=0,
+                user_id=503, max_frames_per_file=20000, verbose=False):
         is_writer_running = self.is_running()
         if not is_writer_running:
-            self.output_file = output_file
-            self.dataset_name = dataset_name
-            self.connection_address = connection_address
-            self.n_frames = n_frames
-            self.user_id = user_id
-            self.n_modules = n_modules
-            self.name = name
-            self.rest_api_port = rest_api_port
-            self.max_frames_per_file = max_frames_per_file
+            if output_file is not None:
+                self.output_file = output_file
+            if dataset_name is not None:
+                self.dataset_name = dataset_name
+            if isinstance(n_frames, int):
+                self.n_frames = n_frames
+            if isinstance(user_id, int):
+                self.user_id = user_id
+            if isinstance(max_frames_per_file, int):
+                self.max_frames_per_file = max_frames_per_file
             self.configuration = False
             self.configuration = self.validate_internal_configuration()
             if verbose:
@@ -162,11 +131,8 @@ class PcoWriter(object):
             "output_file":self.output_file,
             "n_frames" : str(self.n_frames),
             "user_id" : str(self.user_id),
-            "n_modules" : str(self.n_modules),
-            "rest_api_port" : str(self.rest_api_port),
             "dataset_name" : self.dataset_name,
-            "max_frames_per_file" : str(self.max_frames_per_file),
-            "statistics_monitor_address" : self.statistics_monitor_address
+            "max_frames_per_file" : str(self.max_frames_per_file)
         }
         if verbose:
             print("\nPCO writer configuration:\n")
@@ -179,7 +145,7 @@ class PcoWriter(object):
         """
 
         if not self.configuration:
-            raise RuntimeError('please call set_configuration() before you start()')
+            raise RuntimeError('please call set_configuration() before you start_writer()')
         
         # check if writer is running before starting it
         is_writer_running = self.is_running()
@@ -206,23 +172,23 @@ class PcoWriter(object):
         is_writer_running = self.is_running()
         if not is_writer_running:
             if verbose:
-                print("\nWriter is not running, nothing to wait_writer(). Please start it using the start() method.\n")
+                print("\nWriter is not running, nothing to wait_writer(). Please start it using the start_writer() method.\n")
             return
         spinner = itertools.cycle(['-', '/', '|', '\\'])
         try:
             while is_writer_running:
+                n_written_frames = self.get_written_frames()
+                is_writer_running = self.is_running()
                 for _ in range(50):
-                    n_written_frames = self.get_written_frames()
-                    # +next(spinner)
-                    msg = "Waiting ... Current number of written frames: %s %s (Ctrl-C to stop waiting)" % ((str(n_written_frames)),(next(spinner)))
-                    sys.stdout.write(msg)
-                    sys.stdout.flush()
-                    time.sleep(0.1)
-                    sys.stdout.write('\r')
-                    sys.stdout.flush()
-                    is_writer_running = self.is_running()
-                    if not is_writer_running:
-                        break
+                    if verbose:
+                        msg = "Waiting ... Current number of written frames: %s %s (Ctrl-C to stop waiting)" % ((str(n_written_frames)),(next(spinner)))
+                        sys.stdout.write(msg)
+                        sys.stdout.flush()
+                        time.sleep(0.1)
+                        sys.stdout.write('\r')
+                        sys.stdout.flush()
+                        if not is_writer_running:
+                            break
         except KeyboardInterrupt:
             pass
         if verbose :
@@ -250,7 +216,7 @@ class PcoWriter(object):
                 raise PcoError(e)
         else:
             if verbose:
-                print("\nWriter is not running, impossible to stop_writer(). Please start it using the start() method.\n")
+                print("\nWriter is not running, impossible to stop_writer(). Please start it using the start_writer() method.\n")
 
     def get_written_frames(self):
         request_url = self.writer_api_address + ROUTES["statistics"]
@@ -277,7 +243,7 @@ class PcoWriter(object):
                 raise PcoError(e)
         else:
             if verbose:
-                print("\nWriter is not running, impossible to get_statistics(). Please start it using the start() method.\n")
+                print("\nWriter is not running, impossible to get_statistics(). Please start it using the start_writer() method.\n")
 
     def get_status(self,verbose=False):
         request_url = self.flask_api_address+ROUTES["status"]
@@ -318,7 +284,7 @@ class PcoWriter(object):
                 raise PcoError(e)
         else:
             if verbose:
-                print("\nWriter is not running, impossible to kill(). Please start it using the start() method.\n")
+                print("\nWriter is not running, impossible to kill(). Please start it using the start_writer() method.\n")
 
     def _clear_configuration(self):
         self._configuration = False
@@ -335,15 +301,9 @@ class PcoWriter(object):
         #     raise RuntimeError('Problem with the n_frames')
         # if not is_valid_user_id(self.user_id):
         #     raise RuntimeError('Problem with the user_id')
-        # if not is_valid_n_modules(self.n_modules):
-        #     raise RuntimeError('Problem with the n_modules')
-        # if not is_valid_rest_port(self.rest_api_port):
-        #     raise RuntimeError('Problem with the rest_api_port')
         # if not is_valid_dataset_name(self.dataset_name):
         #     raise RuntimeError('Problem with the dataset_name')
         # if not is_valid_frames_per_file(self.max_frames_per_file):
         #     raise RuntimeError('Problem with the max_frames_per_file')
-        # if not is_valid_statistics_monitor_address(self.statistics_monitor_address):
-        #     raise RuntimeError('Problem with the statistics_monitor_address')
         return True
 
