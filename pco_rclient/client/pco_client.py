@@ -108,6 +108,8 @@ class PcoWriter(object):
         self.flask_api_address = "http://%s:%s" % ('xbl-daq-32', 9901)
         self.writer_api_address = "http://%s:%s" % ('xbl-daq-32', 9555)
         self.status = 'initialized'
+        self.last_run_json = None
+        self.configured = False
         if not debug:
             is_writer_running = self.is_running()
             if not is_writer_running:
@@ -119,6 +121,7 @@ class PcoWriter(object):
                     self.max_frames_per_file = max_frames_per_file
                 if isinstance(user_id, int):
                     self.user_id = user_id        
+                self.configured = True
             else:
                 raise RuntimeError("\n Writer configuration can not be updated "
                     "while the PCO writer is running. Please, stop() the writer "
@@ -133,6 +136,7 @@ class PcoWriter(object):
             self.n_frames = n_frames
             self.dataset_name = dataset_name
             self.max_frames_per_file = max_frames_per_file
+            self.configured = True
         if self.max_frames_per_file != 20000:
             # if needed, it verifies if output_file has placeholder
             regexp = re.compile(r'%[\d]+d')
@@ -155,6 +159,9 @@ class PcoWriter(object):
                 self.max_frames_per_file = max_frames_per_file
             if connection_address is not None:
                 self.connection_address = connection_address
+            # sets configured and status initialized
+            self.configured = True
+            self.status = 'initialized'
             if verbose:
                 print("\nUpdated PCO writer configuration:\n")
                 pprint.pprint(self.get_configuration())
@@ -164,11 +171,11 @@ class PcoWriter(object):
                 print("\n Writer configuration can not be updated while PCO "
                       "writer is running. Please, stop() the writer to change "
                       "configuration.\n")
-        self.status = 'initialized'
        
 
     def get_configuration(self, verbose=False):
-        if self.status =='initialized':
+        if (self.status =='initialized' or self.status == 'finished') \
+                and self.configured:
             configuration_dict = {
                 "connection_address" : self.connection_address,
                 "output_file":self.output_file,
@@ -186,15 +193,14 @@ class PcoWriter(object):
                 print("\n")
         else:
             return None
-        
         return(configuration_dict)
 
     def start(self, verbose=False):
         """start a new writer process
         """
-        if self.status != 'initialized':
+        if self.status != 'initialized' and not self.configured:
             raise PcoError("please configure the writer by calling the "
-                "set_configuration() command before you start_writer()")
+                "configure() command before you start()")
         
         # check if writer is running before starting it
         if not self.is_running():
@@ -218,19 +224,9 @@ class PcoWriter(object):
                   "again. Getting the status of the writer... \n")
             self.get_status()
 
-    def wait(self, wait_time=5, verbose=False):
+    def wait(self, verbose=False):
         """Wait for the writer to finish the writing process.
         """
-        
-
-        # TODO: correctly implement the wait_time
-        #       A global timeout is probably not a good idea since it is very
-        #       difficult to predict in a simple way how long the writer will
-        #       be busy to write a given data stream. It's probably better to
-        #       check if the number of written frames keeps chaning (meaning
-        #       the writer is working), and if that is not the case for a given
-        #       maximum duration of inactivity, then the wait process times
-        #       out.
 
         # check if writer is running before killing it
         is_writer_running = self.is_running()
@@ -248,7 +244,7 @@ class PcoWriter(object):
                     msg = "Writer is running ... Current number of written frames: %s %s (Ctrl-C to stop waiting)" % ((str(n_written_frames)),(next(spinner)))
                     sys.stdout.write(msg)
                     sys.stdout.flush()
-                    time.sleep(wait_time)
+                    time.sleep(0.1)
                     sys.stdout.write('\r')
                     sys.stdout.flush()
                 is_writer_running = self.is_running()
@@ -261,24 +257,24 @@ class PcoWriter(object):
         
 
     def flush_cam_stream(self, verbose=False):
-        if verbose:
-            print("Flushing camera stream ... (Ctrl-C to stop)")
-        context = zmq.Context()
-        socket = context.socket(zmq.PULL)
-        socket.connect(self.connection_address)
-        x = 0
-        consumer = True
-        while consumer:
-            string = socket.recv()
-            if x % 2 != 1:
-                try:
+        try:
+            if verbose:
+                print("Flushing camera stream ... (Ctrl-C to stop)")
+            context = zmq.Context()
+            socket = context.socket(zmq.PULL)
+            socket.connect(self.connection_address)
+            x = 0 
+            while True:
+                string = socket.recv()
+                if x % 2 != 1:
                     d = json.loads(string.decode())
                     if verbose:
                         print(d)
-                except KeyboardInterrupt:
-                    consumer = False
-                    raise PcoError(e)
-            x+=1
+                x+=1
+            socket.close()
+            context.term()
+        except KeyboardInterrupt:
+            pass
         return
 
     def stop(self, verbose=False):
@@ -293,6 +289,8 @@ class PcoWriter(object):
                     if verbose:
                         print("\nPCO writer trigger stop successfully "
                               "submitted to the server.\n")
+                    self.configured = False
+
                 else:
                     print("\nPCO writer stop writer failed. Server response: "
                           "%s\n" % (response))
@@ -333,16 +331,18 @@ class PcoWriter(object):
                 print("\nWriter is not running, impossible to "
                       "get_statistics(). Please start it using the "
                       "start_writer() method.\n")
-            
-    def get_status_finished(self):
+
+
+    def get_last_run_stats(self):
         request_url = self.flask_api_address+ROUTES["finished"]
         try:
             response = requests.get(request_url, timeout=3).json()
+            self.last_run_json = response
             self.status = response['value']
-            return self.status
+            return self.last_run_json
         except:
             self.status = 'error'
-            return self.status
+            return self.last_run_json
                 
 
     def get_status(self, verbose=False):
@@ -378,6 +378,7 @@ class PcoWriter(object):
                     if verbose:
                         print("\nPCO writer process successfully killed.\n")
                     self.status = 'finished'
+                    self.configured = False
                 else:
                     print("\nPCO writer kill() failed.")
             except Exception as e:
