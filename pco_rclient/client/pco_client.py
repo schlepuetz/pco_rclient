@@ -194,7 +194,8 @@ class PcoWriter(object):
                       "configuration.\n")       
 
     def get_configuration(self, verbose=False):
-        if (self.status =='initialized' or self.status == 'finished') and self.configured:
+        if (self.status =='initialized' or self.status == 'finished') \
+                and self.configured:
             configuration_dict = {
                 "connection_address" : self.connection_address,
                 "output_file":self.output_file,
@@ -217,7 +218,7 @@ class PcoWriter(object):
     def start(self, verbose=False):
         """start a new writer process
         """
-        if self.status != 'initialized' :
+        if self.status != 'initialized' and not self.configured:
             raise PcoError("please configure the writer by calling the "
                 "configure() command before you start()")
         
