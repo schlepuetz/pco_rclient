@@ -170,6 +170,7 @@ class PcoWriter(object):
                 print("\n Writer configuration can not be updated while PCO "
                       "writer is running. Please, stop() the writer to change "
                       "configuration.\n")
+            return None
        
     def set_last_configuration(self, verbose=False):
         is_writer_running = self.is_running()
@@ -187,11 +188,14 @@ class PcoWriter(object):
                 print("\nUpdated PCO writer configuration:\n")
                 pprint.pprint(self.get_configuration())
                 print("\n")
+            # returns the status to indicate that it's initialized
+            return self.status
         else:
             if verbose:
                 print("\n Writer configuration can not be updated while PCO "
                       "writer is running. Please, stop() the writer to change "
-                      "configuration.\n")       
+                      "configuration.\n")
+        return None
 
     def get_configuration(self, verbose=False):
         if (self.status =='initialized' or self.status == 'finished') \
@@ -242,6 +246,7 @@ class PcoWriter(object):
         else:
             print("\nWriter is already running, impossible to start_writer() "
                   "again. Getting the status of the writer... \n")
+            return None
 
     def wait(self, verbose=False):
         """Wait for the writer to finish the writing process.
@@ -251,7 +256,7 @@ class PcoWriter(object):
         is_writer_running = self.is_running()
         if not is_writer_running:
             print("\nWriter is not running, nothing to wait().\n")
-            return
+            return None
         spinner = itertools.cycle(['-', '/', '|', '\\'])
         try:
             while is_writer_running:
@@ -273,6 +278,7 @@ class PcoWriter(object):
             print("\nWriter is not running anymore, exiting wait().\n")
         elif verbose:
             print("\nWriter is still running, exiting wait().\n")
+        return None
         
 
     def flush_cam_stream(self, verbose=False):
@@ -319,6 +325,7 @@ class PcoWriter(object):
             if verbose:
                 print("\nWriter is not running, impossible to stop_writer(). "
                       "Please start it using the start_writer() method.\n")
+            return None
 
     def get_written_frames(self):
         request_url = self.writer_api_address + ROUTES["statistics"]
@@ -345,14 +352,24 @@ class PcoWriter(object):
                     return response
             except Exception as e:
                 raise PcoError(e)
-        else:
+        elif self.get_previous_status() == 'finished': #gets last statistics
             if verbose:
-                print("\nWriter is not running, impossible to "
-                      "get_statistics(). Please start it using the "
-                      "start_writer() method.\n")
+                print("\nWriter is not running, getting statistics "
+                    "from previous execution.\n")
+            return self.get_previous_statistics()
+        return None
 
+    def get_previous_status(self):
+        request_url = self.flask_api_address+ROUTES["finished"]
+        try:
+            response = requests.get(request_url, timeout=3).json()
+            self.last_run_json = response
+            self.status = response['value']
+        except:
+            self.status = 'unknown'
+        return self.status
 
-    def get_last_run_stats(self):
+    def get_previous_statistics(self):
         request_url = self.flask_api_address+ROUTES["finished"]
         try:
             response = requests.get(request_url, timeout=3).json()
@@ -360,19 +377,25 @@ class PcoWriter(object):
             self.status = response['value']
             return self.last_run_json
         except:
-            self.status = 'error'
+            self.status = 'unknown'
             return self.last_run_json
                 
 
     def get_status(self, verbose=False):
-        request_url = self.flask_api_address+ROUTES["status"]
-        try:
-            response = requests.get(request_url, timeout=3).json()
-            self.status = response['value']
-            return self.status
-        except:
-            self.status = 'error'
-            return self.status
+        # check if writer is running: defines if current / previous status is requested
+        if self.is_running():
+            request_url = self.flask_api_address+ROUTES["status"]
+            try:
+                response = requests.get(request_url, timeout=3).json()
+                self.status = response['value']
+                return self.status
+            except:
+                self.status = 'unknown'
+                return self.status
+        else: # writer is not running
+            if verbose:
+                print("\nWriter is not running, getting status from previous execution.\n")
+            return self.get_previous_status()
 
     def is_running(self):
         request_url = self.flask_api_address+ROUTES["status"]
@@ -383,7 +406,7 @@ class PcoWriter(object):
             else:
                 return False
         except:
-            self.status = 'error'
+            self.status = 'unknown'
             return False
 
     def kill(self, verbose=False):
@@ -400,8 +423,10 @@ class PcoWriter(object):
                 else:
                     print("\nPCO writer kill() failed.")
             except Exception as e:
+                self.status = 'unknown'
                 raise PcoError(e)
         else:
             if verbose:
                 print("\nWriter is not running, impossible to kill(). Please "
-                      "start it using the start_writer() method.\n")
+                      "start it using the start() method.\n")
+            return None
