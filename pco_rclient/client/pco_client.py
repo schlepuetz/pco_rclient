@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Client to control the gigafrost writer
+"""Client to control the pco camera writer
 """
 
 import os
