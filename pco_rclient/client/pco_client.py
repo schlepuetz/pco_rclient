@@ -189,12 +189,12 @@ class PcoWriter(object):
                 pprint.pprint(self.get_configuration())
                 print("\n")
             # returns the status to indicate that it's initialized
-            return self.status 
+            return self.status
         else:
             if verbose:
                 print("\n Writer configuration can not be updated while PCO "
                       "writer is running. Please, stop() the writer to change "
-                      "configuration.\n")  
+                      "configuration.\n")
         return None
 
     def get_configuration(self, verbose=False):
@@ -358,7 +358,8 @@ class PcoWriter(object):
                 raise PcoError(e)
         elif self.get_previous_status() == 'finished': #gets last statistics
             if verbose:
-                print("\nWriter is not running, getting statistics from previous execution.\n")
+                print("\nWriter is not running, getting statistics "
+                    "from previous execution.\n")
             return self.get_previous_statistics()
         return None
 
