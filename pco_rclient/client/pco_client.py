@@ -366,7 +366,6 @@ class PcoWriter(object):
         request_url = self.flask_api_address+ROUTES["finished"]
         try:
             response = requests.get(request_url, timeout=3).json()
-            print("RESPONSE FROM GET PREVIOUS STATUS:", response)
             self.last_run_json = response
             return response['value']
         except:
@@ -377,12 +376,9 @@ class PcoWriter(object):
         try:
             response = requests.get(request_url, timeout=3).json()
             self.last_run_json = response
-            self.status = response['value']
-            return self.last_run_json
         except:
-            self.status = 'unknown'
-            return self.last_run_json
-                
+            pass
+        return self.last_run_json
 
     def get_status(self, verbose=False):
         # check if writer is running: defines if current / previous status is requested
@@ -391,9 +387,9 @@ class PcoWriter(object):
             try:
                 response = requests.get(request_url, timeout=3).json()
                 self.status = response['value']
-                return self.status
             except:
-                return self.status
+                pass
+            return self.status
         else: # writer is not running
             if verbose:
                 print("\nWriter is not running, getting status from previous execution.\n")
