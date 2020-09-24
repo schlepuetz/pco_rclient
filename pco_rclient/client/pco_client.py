@@ -113,17 +113,15 @@ class PcoWriter(object):
         self.configured = False
         if not debug:
             is_writer_running = self.is_running()
+            self.output_file = is_valid_output_file(output_file, 'output_file')
+            self.dataset_name = dataset_name
+            self.n_frames = is_valid_int_parameter(n_frames, 'n_frames')
+            self.max_frames_per_file = is_valid_int_parameter(max_frames_per_file, 'max_frames_per_file')
+            self.user_id = is_valid_int_parameter(user_id,'user_id')
             if not is_writer_running:
-                self.output_file = is_valid_output_file(output_file, 'output_file')
-                self.dataset_name = dataset_name
-                self.n_frames = is_valid_int_parameter(n_frames, 'n_frames')
-                self.max_frames_per_file = is_valid_int_parameter(max_frames_per_file, 'max_frames_per_file')
-                self.user_id = is_valid_int_parameter(user_id,'user_id')
                 self.configured = True
             else:
-                raise RuntimeError("\n Writer configuration can not be updated "
-                    "while the PCO writer is running. Please, stop() the writer "
-                    " first and then change the configuration.\n")
+                self.configured = False
         else:
             print("\nSetting debug configurations... \n")
             self.flask_api_address = is_valid_rest_api_address("http://localhost:9901", 'flask_api_address')
@@ -219,7 +217,6 @@ class PcoWriter(object):
         else:
             if verbose:
                 print("\nNo valid configuration. Please, check status and configuration.\n")
-                print(self.status, self.configured)
             return None
 
     def start(self, verbose=False):
@@ -324,7 +321,7 @@ class PcoWriter(object):
                     print("\nPCO writer stop writer failed. Server response: "
                           "%s\n" % (response))
             except Exception as e:
-                raise PcoError(e)
+                raise PcoWarning(e)
         else:
             if verbose:
                 print("\nWriter is not running, impossible to stop_writer(). "
@@ -342,25 +339,24 @@ class PcoWriter(object):
 
 
     def get_statistics(self, verbose=False):
-        # check if writer is running before getting statistics
-        is_writer_running = self.is_running()
-        if is_writer_running:
-            request_url = self.writer_api_address + ROUTES["statistics"]
-            try:
-                response = requests.get(request_url).json()
-                if validate_statistics_response(response):
-                    if verbose:
-                        print("\nPCO writer statistics:\n")
-                        pprint.pprint(response)
-                        print("\n")
-                    return response
-            except Exception as e:
-                raise PcoError(e)
-        elif self.get_previous_status() == 'finished': #gets last statistics
+        request_url = self.writer_api_address + ROUTES["statistics"]
+        try:
+            response = requests.get(request_url).json()
+            if validate_statistics_response(response):
+                if verbose:
+                    print("\nPCO writer statistics:\n")
+                    pprint.pprint(response)
+                    print("\n")
+                return response
+        except Exception as e:
+            # if current statistics fails -> pass
+            pass
+        # gets previous statistics if status = finished
+        if self.get_previous_status() == 'finished': #gets last statistics
             if verbose:
                 print("\nWriter is not running, getting statistics "
                     "from previous execution.\n")
-            return self.get_previous_statistics()
+            return self.last_run_json
         return None
 
     def get_previous_status(self):
