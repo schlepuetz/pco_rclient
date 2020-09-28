@@ -88,6 +88,9 @@ ROUTES = {
     "statistics":"/statistics",
     "stop": "/stop",
     "kill": "/kill",
+    "uptime": "/uptime",
+    "log": "/log",
+    "ack": "/ack",
     "finished": "/finished"
 }
 
@@ -424,3 +427,29 @@ class PcoWriter(object):
                 print("\nWriter is not running, impossible to kill(). Please "
                       "start it using the start() method.\n")
             return None
+    
+    def is_server_running(self):
+        request_url = self.flask_api_address+ROUTES["ack"]
+        try:
+            response = requests.get(request_url, timeout=3).json()
+            return response['success']
+        except:
+            return False
+
+    def get_server_log(self):
+        request_url = self.flask_api_address+ROUTES["log"]
+        try:
+            response = requests.get(request_url).json()
+            return response['log']
+        except:
+            return None
+
+    def get_server_uptime(self):
+        request_url = self.flask_api_address+ROUTES["uptime"]
+        try:
+            response = requests.get(request_url).json()
+            return response['uptime']
+        except:
+            return None
+
+
