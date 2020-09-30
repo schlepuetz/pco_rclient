@@ -71,17 +71,15 @@ def validate_connection_address(connection_address, name):
     addr = validate_network_address(connection_address, protocol='tcp')
     if addr:
         return addr
-    else:
-        raise PcoError("Problem with the {}:\n  {} does not seem to be a "
-                       "valid address".format(name, connection_address))
+    raise PcoError("Problem with the {}:\n  {} does not seem to be a "
+                    "valid address".format(name, connection_address))
 
 def validate_dataset_name(dataset_name, name):
     dataset_name = str(dataset_name)
     if len(dataset_name) > 0:
         return dataset_name
-    else:
-        raise PcoError("Problem with the %s parameter: "
-                       "not a valid dataset name" % name)
+    raise PcoError("Problem with the %s parameter: "
+                    "not a valid dataset name" % name)
 
 def validate_ip_address(ip_address):
     """
@@ -181,16 +179,14 @@ def validate_network_address(network_address, protocol='tcp'):
         if bool(re.match(protocol_pattern + hostname_pattern + port_pattern,
                          network_address)):
             return network_address
-
     return None
 
 def validate_nonneg_int_parameter(parameter_int, name):
     parameter_int = int(parameter_int)
     if parameter_int >= 0:
         return parameter_int
-    else:
-        raise PcoError("Problem with the %s parameter: "
-                       "not a non-negative integer" % name)
+    raise PcoError("Problem with the %s parameter: "
+                    "not a non-negative integer" % name)
 
 def validate_output_file(output_file, name):
     output_file = os.path.expanduser(output_file)
@@ -208,9 +204,8 @@ def validate_rest_api_address(rest_api_address, name):
     addr = validate_network_address(rest_api_address, protocol='http')
     if addr:
         return addr
-    else:
-        raise PcoError("Problem with the {}:\n  {} does not seem to be a "
-                       "valid address".format(name, rest_api_address))
+    raise PcoError("Problem with the {}:\n  {} does not seem to be a "
+                    "valid address".format(name, rest_api_address))
 
 def validate_statistics_response(writer_response, verbose=False):
     return writer_response
@@ -415,12 +410,11 @@ class PcoWriter(object):
                       "aquisition".format(conf_validity))
                 print("\n")
             return self.get_configuration()
-        else:
-            if verbose:
-                print("\n Writer configuration can not be updated while PCO "
-                      "writer is running. Please, stop() the writer to change "
-                      "configuration.\n")
-            return None
+        if verbose:
+            print("\n Writer configuration can not be updated while PCO "
+                    "writer is running. Please, stop() the writer to change "
+                    "configuration.\n")
+        return None
 
     def flush_cam_stream(self, timeout=500, verbose=False):
         """
@@ -575,11 +569,10 @@ class PcoWriter(object):
                     pprint.pprint(response)
                     print("\n")
                 return response
-            else:
-                if verbose:
-                    print("PCO writer did not return a validated statistics "
-                          "response")
-                return None
+            if verbose:
+                print("PCO writer did not return a validated statistics "
+                        "response")
+            return None
         except requests.ConnectionError:
             # We expect a timeout error if the writer is not running, so return
             # None
@@ -687,8 +680,7 @@ class PcoWriter(object):
         stats = self.get_statistics()
         if stats is not None:
             return stats.get('n_written_frames', None)
-        else:
-            return None
+        return None
 
     def is_connected(self):
         """
@@ -712,10 +704,7 @@ class PcoWriter(object):
         request_url = self.flask_api_address+ROUTES["status"]
         try:
             response = requests.get(request_url, timeout=3).json()
-            if (response['status'] in ('receiving', 'writing')):
-                return True
-            else:
-                return False
+            return bool(response['status'] in ('receiving', 'writing'))
         except requests.ConnectionError:
             raise PcoError("The writer server seems to be disconnected and is "
                            "not responding.")
