@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#!/bin/env python
 """
 Client to control the PCO writer.
 """
@@ -291,7 +292,7 @@ class PcoWriter(object):
         else:
             print("\nSetting debug configurations... \n")
             self.flask_api_address = validate_rest_api_address(
-                "http://localhost:9901", 'fask_api_address')
+                "http://localhost:9901", 'flask_api_address')
             self.writer_api_address = validate_rest_api_address(
                 "http://localhost:9555", 'writer_api_address')
             self.connection_address = validate_connection_address(
