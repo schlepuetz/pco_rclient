@@ -223,8 +223,8 @@ ROUTES = {
     "statistics":"/statistics",
     "stop": "/stop",
     "kill": "/kill",
-    "uptime": "/uptime",
-    "log": "/log",
+    "server_log": "/server_log",
+    "server_uptime": "/server_uptime",
     "ack": "/ack",
     "finished": "/finished"
 }
@@ -928,20 +928,42 @@ class PcoWriter(object):
                 print("\nWriter is still running, exiting wait().\n")
             return None
     
-    # def get_server_log(self):
-    #     request_url = self.flask_api_address+ROUTES["log"]
-    #     try:
-    #         response = requests.get(request_url).json()
-    #         return response['log']
-    #     except:
-    #         return None
+    def get_server_log(self, verbose=False):
+        """
+        Retrieve the last 10 lines log of the writer server.
 
-    # def get_server_uptime(self):
-    #     request_url = self.flask_api_address+ROUTES["uptime"]
-    #     try:
-    #         response = requests.get(request_url).json()
-    #         return response['uptime']
-    #     except:
-    #         return None
+        Returns
+        -------
+        log : str
+            The last 10 lines of the writer server.
+
+        """
+        request_url = self.flask_api_address+ROUTES["server_log"]
+        try:
+            response = requests.get(request_url).json()
+            if 'success' in response:
+                return response['log']
+        except Exception as e:
+            return None
+        return None
+
+    def get_server_uptime(self, verbose=False):
+        """
+        Retrieves the uptime of the writer server service.
+
+        Returns
+        -------
+        uptime : str
+            The uptime of the writer server service.
+
+        """
+        request_url = self.flask_api_address+ROUTES["server_uptime"]
+        try:
+            response = requests.get(request_url, data={"key": "uptime"}).json()
+            if 'success' in response:
+                return response['uptime']
+        except Exception as e:
+            return None
+        return None
 
 
