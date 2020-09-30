@@ -110,8 +110,7 @@ def validate_kill_response(writer_response, verbose=False):
         if verbose:
             print(writer_response['status'])
         return True
-    else:
-        return False
+    return False
 
 def validate_network_address(network_address, protocol='tcp'):
     """
@@ -192,8 +191,7 @@ def validate_output_file(output_file, name):
     output_file = os.path.expanduser(output_file)
     if bool(re.match("[%./a-zA-Z0-9_-]*.h5", output_file)):
         return output_file
-    else:
-        raise PcoError("Problem with the output file name %s." % name)
+    raise PcoError("Problem with the output file name %s." % name)
 
 def validate_response(server_response, verbose=False):
     if not server_response['success']:
@@ -542,7 +540,7 @@ class PcoWriter(object):
                 pprint.pprint(response)
                 print("\n")
             return response
-        except:
+        except Exception as e:
             if verbose:
                 print("PCO writer did not return a valid statistics "
                       "response for the previous run.")
@@ -869,7 +867,7 @@ class PcoWriter(object):
             assert self.connection_address == validate_connection_address(
                 self.connection_address, 'connection_address')
             return True
-        except:
+        except Exception as e:
             return False
 
     def wait(self, verbose=False):
@@ -954,5 +952,3 @@ class PcoWriter(object):
         except Exception as e:
             return None
         return None
-
-
