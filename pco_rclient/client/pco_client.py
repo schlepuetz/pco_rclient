@@ -947,7 +947,7 @@ class PcoWriter(object):
         """
         request_url = self.flask_api_address+ROUTES["server_uptime"]
         try:
-            response = requests.get(request_url, data={"key": "uptime"}).json()
+            response = requests.get(request_url).json()
             if 'success' in response:
                 return response['uptime']
         except Exception as e:
