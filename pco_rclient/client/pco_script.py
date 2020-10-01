@@ -1,3 +1,4 @@
+#!/bin/env python
 import time, os
 import glob
 from shutil import copy
@@ -18,104 +19,108 @@ pco_controller = PcoWriter(output_file='/tmp/output_file.h5',
     user_id=0,
     debug=DEBUG)
 
-# print(pco_controller.is_server_running())
-# print(pco_controller.get_server_log())
-# pco_controller.get_server_uptime()
-
-
 #########################################
 # TEST USAGE WHEN WRITER IS NOT RUNNING #
 #########################################
-# stop the writer
-# pco_controller.stop()
+# configure
+pco_controller.configure(output_file='/tmp/output_file_new.h5',
+                        dataset_name='data_black',
+                        n_frames=15,
+                        connection_address='tcp://pc9808:9999',
+                        user_id=0,
+                        max_frames_per_file=20,
+                        verbose=VERBOSE)
+# flush_cam_stream
+pco_controller.flush_cam_stream(verbose=VERBOSE)
+# get_configuration
+pco_controller.get_configuration(verbose=VERBOSE)
+# get_progress_message
+print(pco_controller.get_progress_message())
+# get_server_log
+pco_controller.get_server_log(verbose=VERBOSE)
+# get_server_uptime
+pco_controller.get_server_uptime(verbose=VERBOSE)
+# get_statistics
+pco_controller.get_statistics(verbose=VERBOSE)
+# get_statistics_last_run
+pco_controller.get_statistics_last_run(verbose=VERBOSE)
+# get_statistics_writer
+pco_controller.get_statistics_writer(verbose=VERBOSE)
+# get_status
+pco_controller.get_status(verbose=VERBOSE)
+# get_status_last_run
+print(pco_controller.get_status_last_run())
+# get_status_writer
+print(pco_controller.get_status_writer())
+# get_written_frames
+print(pco_controller.get_written_frames())
+# is_connected
+print(pco_controller.is_connected())
+# is_running
+print(pco_controller.is_running())
+# kill
+pco_controller.kill(verbose=VERBOSE)
+# start
+# pco_controller.start(verbose=VERBOSE)
+# stop
+pco_controller.stop(verbose=VERBOSE)
+# validate_configuration
+print(pco_controller.validate_configuration())
+# wait
+pco_controller.wait(verbose=VERBOSE)
 # gets status
-# pco_controller.get_status()
+pco_controller.get_status()
 # gets stats
-# pco_controller.get_statistics(VERBOSE)
-# kills the writer
-# pco_controller.kill()
-# getting the configuration
-# pco_controller.get_configuration(VERBOSE)
-# quit()
-# wait the writer
-# pco_controller.wait()
-# sets config
-# pco_controller.configure(output_file='./output_new.h5', 
-#     dataset_name='data_black', 
-#     connection_address="tcp://pc9808:9999", 
-#     user_id=0,
-#     verbose=VERBOSE)
-# getting the configuration
-# pco_controller.get_configuration(VERBOSE)
+pco_controller.get_statistics(VERBOSE)
 
-# #########
-# # START #
-# #########
 #####################################
 # TEST USAGE WHEN WRITER IS RUNNING #
 #####################################
-# start the writer
-# print(pco_controller.get_previous_status())
-# print(pco_controller.get_previous_statistics())
-# print(pco_controller.get_last_run_stats())
-# print(pco_controller.get_status(True))
-# print(pco_controller.get_configuration(True))
-# print(pco_controller.set_last_configuration())
-pco_controller.start(True)
-# time.sleep(5)
-# print(pco_controller.get_status(VERBOSE))
-# print(pco_controller.get_statistics())
-# pco_controller.wait(True)
-# print(pco_controller.get_statistics())
-# pco_controller.wait(True)
-# print(pco_controller.get_status())
-# # pco_controller.wait(True)
-time.sleep(10)
-pco_controller.stop(True)
-time.sleep(5)
-print(pco_controller.get_statistics(True))
-
-# print(pco_controller.get_statistics(True))
-# print(pco_controller.get_status(True))
-
-# pco_controller.flush_cam_stream(True)
-
-# time.sleep(5)
-# print(pco_controller.get_status())
-# print(pco_controller.get_last_run_stats())
-# pco_controller.configure(output_file='/tmp/output_new.h5', 
-#     dataset_name='data_black', 
-#     connection_address="tcp://pc9808:9999", 
-#     user_id=0,
-#     max_frames_per_file=10,
-#     n_frames=6)
-# pco_controller.start(VERBOSE)
-# pco_controller.wait(True)
-# # pco_controller.get_statistics(VERBOSE)
-# # print(pco_controller.get_status())
-# # pco_controller.wait(0.1, True)
-
-# pco_controller.stop(VERBOSE)
-# # time.sleep(5)
-# # print(pco_controller.get_last_run_stats())
-# # print(pco_controller.get_status())
-
-
-# # # time.sleep(6)
-
-# # # print(pco_controller.get_last_run_stats())
-# # pco_controller.start(VERBOSE)
-# # pco_controller.wait(0.1, True)
-# # pco_controller.get_statistics(VERBOSE)
-# # print(pco_controller.get_status())
-# # pco_controller.wait(0.1, True)
-# # pco_controller.stop(VERBOSE)
-# # time.sleep(5)
-# # print(pco_controller.get_last_run_stats())
-# # print(pco_controller.get_status())
-
-# # # for file_name in glob.glob(r'/tmp/output*.h5'):
-# # #     copy(file_name, "/home/hax_l/software/lib_cpp_h5_writer/tomcat/")
-# # #     # os.remove(file_name)
-
-
+# start
+pco_controller.start(verbose=VERBOSE)
+# configure
+pco_controller.configure(output_file='/tmp/output_file_new.h5',
+                        dataset_name='data_black',
+                        n_frames=15,
+                        connection_address='tcp://pc9808:9999',
+                        user_id=0,
+                        max_frames_per_file=20,
+                        verbose=VERBOSE)
+# flush_cam_stream
+# pco_controller.flush_cam_stream(verbose=VERBOSE)
+# get_configuration
+pco_controller.get_configuration(verbose=VERBOSE)
+# get_progress_message
+print(pco_controller.get_progress_message())
+# get_server_log
+pco_controller.get_server_log(verbose=VERBOSE)
+# get_server_uptime
+pco_controller.get_server_uptime(verbose=VERBOSE)
+# get_statistics
+pco_controller.get_statistics(verbose=VERBOSE)
+# get_statistics_last_run
+pco_controller.get_statistics_last_run(verbose=VERBOSE)
+# get_statistics_writer
+pco_controller.get_statistics_writer(verbose=VERBOSE)
+# get_status
+pco_controller.get_status(verbose=VERBOSE)
+# get_status_last_run
+print(pco_controller.get_status_last_run())
+# get_status_writer
+print(pco_controller.get_status_writer())
+# get_written_frames
+print(pco_controller.get_written_frames())
+# is_connected
+print(pco_controller.is_connected())
+# is_running
+print(pco_controller.is_running())
+# kill
+# pco_controller.kill(verbose=VERBOSE)
+# validate_configuration
+print(pco_controller.validate_configuration())
+# wait
+pco_controller.wait(verbose=VERBOSE)
+# gets status
+pco_controller.get_status()
+# stop
+pco_controller.stop(verbose=VERBOSE)
