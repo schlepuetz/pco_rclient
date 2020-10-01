@@ -236,6 +236,10 @@ class PcoWriter(object):
         Initialize the PCO Writer object.
         """
 
+        # Note: the tcp://129.129.99.104:8080 connection address corresponds
+        #       to the 1G copper link on x02da-pco-4
+        #       (last updated: 2020-09-31)
+        
         self.flask_api_address = validate_rest_api_address(
             flask_api_address, 'flask_api_address')
         self.writer_api_address = validate_rest_api_address(
@@ -468,7 +472,6 @@ class PcoWriter(object):
             "user_id": str(self.user_id),
             "dataset_name": self.dataset_name,
             "max_frames_per_file": str(self.max_frames_per_file),
-            "statistics_monitor_address": "tcp://*:8088",
             "rest_api_port": "9555",
             "n_modules": "1"
         }
@@ -491,12 +494,61 @@ class PcoWriter(object):
             n_req = stats.get('n_frames', -1)
             n_rcvd = stats.get('n_received_frames', 0)
             n_wrtn = stats.get('n_written_frames', 0)
-            pc_rcvd = float(n_rcvd) / n_req * 100.0
-            pc_wrtn = float(n_wrtn) / n_req * 100.0
-            msg = ("Writer: {}, #received: {:4d} ({:.1f}%), "
-                    "#written: {:4d} ({:.1f}%)".format(
-                    status, n_rcvd, pc_rcvd, n_wrtn, pc_wrtn))
+            if n_req > 0: 
+                pc_rcvd = float(n_rcvd) / n_req * 100.0
+                pc_wrtn = float(n_wrtn) / n_req * 100.0
+                msg = ("Writer: {}, #received: {:4d} ({:.1f}%), "
+                        "#written: {:4d} ({:.1f}%)".format(
+                        status, n_rcvd, pc_rcvd, n_wrtn, pc_wrtn))
+            else:
+                msg = ("Writer: {}, #received: {:4d}, "
+                        "#written: {:4d}".format(
+                        status, n_rcvd, n_wrtn))
         return msg
+
+    def get_server_log(self, verbose=False):
+        """
+        Retrieve the last 10 lines log of the writer server.
+
+        Returns
+        -------
+        log : str
+            The last 10 lines of the writer server.
+
+        """
+        request_url = self.flask_api_address+ROUTES["server_log"]
+        try:
+            response = requests.get(request_url).json()
+            if 'success' in response:
+                if verbose:
+                    print("\nPCO writer server log:")
+                    print(response['log'])
+                return response['log']
+        except Exception as e:
+            return None
+        return None
+
+    def get_server_uptime(self, verbose=False):
+        """
+        Retrieves the uptime of the writer server service.
+
+        Returns
+        -------
+        uptime : str
+            The uptime of the writer server service.
+
+        """
+        request_url = self.flask_api_address+ROUTES["server_uptime"]
+        try:
+            response = requests.get(request_url, data={"key": "uptime"}).json()
+            if 'success' in response:
+                if verbose:
+                    print("\nPCO writer server log:")
+                    print("\t"+response['uptime'])
+                return response['uptime']
+        except Exception as e:
+            return None
+        return None
 
     def get_statistics(self, verbose=False):
         """
@@ -574,11 +626,18 @@ class PcoWriter(object):
         except requests.ConnectionError:
             # We expect a timeout error if the writer is not running, so return
             # None
+            if verbose:
+                print("PCO writer did not return a validated statistics "
+                        "response")
             return None
         except Exception as e:
             # If the error was not a timeout (which is expected in this context
             # if the writer is actually not running), then it was probably more
             # serious and should be raised.
+            if verbose:
+                template = ("PCO writer did not return a validated statistics. "
+                        "An exception of type {0} occurred. Arguments:\n{1!r}")
+                print(template.format(type(e).__name__, e.args))
             raise PcoError(e)
 
     def get_status(self, verbose=False):
@@ -759,23 +818,26 @@ class PcoWriter(object):
         else:
             self.status = 'unconfigured'
 
-    def start(self, verbose=False):
+    def start(self, wait=True, timeout=10, verbose=False):
         """
         Start a new writer process.
 
         Parameters
         ----------
+        wait : bool, optional
+            It waits for the writer to be running. (default = True)
+        timeout : float, optional
+            The maximum time [s] to wait for the writer to report a running
+            status. (default = 10)
         verbose : bool, optional
             Show verbose information while starting the process.
             (default = False)
 
         """
-
         if not self.validate_configuration():
             raise PcoError("PCO writer is not properly configured! "
                 "Please configure the writer by calling the "
                 "configure() command before you start()")
-
         response = 0
         if not self.is_running():
             request_url = self.flask_api_address + ROUTES["start_pco"]
@@ -799,6 +861,16 @@ class PcoWriter(object):
         else:
             print("\nWriter is already running, impossible to start() "
                   "again.\n")
+        # waits for is_running if wait=True
+        if 'success' in response and wait:
+            timeout_limit = time.time() + timeout
+            while not self.is_running():
+                if time.time() > timeout_limit:
+                    print("WARNING!\n"
+                          "PCO writer did not report reaching the running "
+                          "state within the timeout of {} s. ".format(timeout))
+                    break
+                time.sleep(0.15)
         self.status = self.get_status()
         return response
 
@@ -882,7 +954,6 @@ class PcoWriter(object):
 
         """
 
-        # check if writer is running before killing it
         if not self.is_running():
             if verbose:
                 print("\nWriter is not running, nothing to wait().\n")
@@ -913,42 +984,88 @@ class PcoWriter(object):
                 print("\nWriter is not running anymore, exiting wait().\n")
             else:
                 print("\nWriter is still running, exiting wait().\n")
-            return None
-    
-    def get_server_log(self, verbose=False):
-        """
-        Retrieve the last 10 lines log of the writer server.
 
+    def wait_nframes(self, nframes, inactivity_timeout=-1, verbose=False):
+        """
+        Wait for the writer to have written a given number of frames to file.
+
+        This function is similar to the :meth:`wait` method, but returns as
+        soon as a given number of frames have been processed. This number can
+        be smaller than the total number of frames to be received by the
+        writer. If the writer finishes before reaching this number, the wait is
+        also finished.
+
+        Parameters
+        ----------
+        nframes : int
+            The number of frames to wait for.
+        inactivity_timeout : float, optional
+            If larger than zero, wait for so many seconds of writer inactivity
+            (meaning that no new frames have been received or written to file)
+            before giving up the wait. Set to a value <= 0 to disable this
+            timeout and wait until the writer is not running anymore.
+            (default = -1)
+        verbose : bool, optional
+            Show verbose information during waiting.
+            (default = False)        
+        
         Returns
         -------
-        log : str
-            The last 10 lines of the writer server.
+        wait_success : bool
+            True if the wait finished successfully, meaning it did not time
+            out, False otherwise.
 
         """
-        request_url = self.flask_api_address+ROUTES["server_log"]
+        
+        if not self.is_running():
+            if verbose:
+                print("\nWriter is not running, nothing to wait().\n")
+            return
+
+        if verbose:
+            print("Waiting for the writer to process {} "
+                  "frames".format(nframes))
+            print("  (Press Ctrl-C to stop waiting)")
+        spinner = itertools.cycle(['-', '/', '|', '\\'])
+        nframes_proc = self.get_written_frames()
+        perc_done = nframes_proc * 100.0 / nframes
+        msg = ("Processed {} of {} frames ({:.1f}% done)".format(
+            nframes_proc, nframes, perc_done))
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+        last_update_time = time.time()
+        nframes_old = 0
         try:
-            response = requests.get(request_url).json()
-            if 'success' in response:
-                return response['log']
-        except Exception as e:
-            return None
-        return None
+            while nframes_proc < nframes:
+                nframes_proc = self.get_written_frames()
+                perc_done = nframes_proc * 100.0 / nframes
+                msg = ("Processed {} of {} frames ({:.1f}% done)".format(
+                    nframes_proc, nframes, perc_done))
+                msg1 = ("{} {}".format(msg, (next(spinner))))
+                sys.stdout.write('\r\033[K')
+                sys.stdout.write(msg1)
+                sys.stdout.flush()
+                if nframes_proc > nframes_old:
+                    nframes_old = nframes_proc
+                    last_update_time = time.time()
+                if ((inactivity_timeout > 0) and
+                    (time.time() - last_update_time > inactivity_timeout)):
+                    print("\n")
+                    print(" *** WARNING: Writer did not receive all requested "
+                        "images!")
+                    print("     Giving up after {} seconds of inactivity "
+                        "...").format(inactivity_timeout)
+                    return(False)
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            pass
 
-    def get_server_uptime(self, verbose=False):
-        """
-        Retrieves the uptime of the writer server service.
+        self.status = self.get_status()
 
-        Returns
-        -------
-        uptime : str
-            The uptime of the writer server service.
+        if verbose:
+            if not self.is_running():
+                print("\nWriter is not running anymore, exiting wait().\n")
+            else:
+                print("\nWriter is still running, exiting wait().\n")
 
-        """
-        request_url = self.flask_api_address+ROUTES["server_uptime"]
-        try:
-            response = requests.get(request_url, data={"key": "uptime"}).json()
-            if 'success' in response:
-                return response['uptime']
-        except Exception as e:
-            return None
-        return None
+        return True
