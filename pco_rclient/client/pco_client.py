@@ -499,6 +499,50 @@ class PcoWriter(object):
                     status, n_rcvd, pc_rcvd, n_wrtn, pc_wrtn))
         return msg
 
+    def get_server_log(self, verbose=False):
+        """
+        Retrieve the last 10 lines log of the writer server.
+
+        Returns
+        -------
+        log : str
+            The last 10 lines of the writer server.
+
+        """
+        request_url = self.flask_api_address+ROUTES["server_log"]
+        try:
+            response = requests.get(request_url).json()
+            if 'success' in response:
+                if verbose:
+                    print("\nPCO Writer server log: \n")
+                    print(response['log'])
+                return response['log']
+        except Exception as e:
+            return None
+        return None
+
+    def get_server_uptime(self, verbose=False):
+        """
+        Retrieves the uptime of the writer server service.
+
+        Returns
+        -------
+        uptime : str
+            The uptime of the writer server service.
+
+        """
+        request_url = self.flask_api_address+ROUTES["server_uptime"]
+        try:
+            response = requests.get(request_url).json()
+            if 'success' in response:
+                if verbose:
+                    print("Server is %s." % response['uptime'])
+                return response['uptime']
+        except Exception as e:
+            return None
+        return None
+
+
     def get_statistics(self, verbose=False):
         """
         Get the statistics of the writer.
@@ -658,6 +702,8 @@ class PcoWriter(object):
                            "not responding.")
         except:
             raise
+
+
 
     def get_written_frames(self):
         """
@@ -916,40 +962,3 @@ class PcoWriter(object):
                 print("\nWriter is still running, exiting wait().\n")
             return None
     
-    def get_server_log(self, verbose=False):
-        """
-        Retrieve the last 10 lines log of the writer server.
-
-        Returns
-        -------
-        log : str
-            The last 10 lines of the writer server.
-
-        """
-        request_url = self.flask_api_address+ROUTES["server_log"]
-        try:
-            response = requests.get(request_url).json()
-            if 'success' in response:
-                return response['log']
-        except Exception as e:
-            return None
-        return None
-
-    def get_server_uptime(self, verbose=False):
-        """
-        Retrieves the uptime of the writer server service.
-
-        Returns
-        -------
-        uptime : str
-            The uptime of the writer server service.
-
-        """
-        request_url = self.flask_api_address+ROUTES["server_uptime"]
-        try:
-            response = requests.get(request_url).json()
-            if 'success' in response:
-                return response['uptime']
-        except Exception as e:
-            return None
-        return None
