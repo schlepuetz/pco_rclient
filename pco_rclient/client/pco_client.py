@@ -909,15 +909,16 @@ class PcoWriter(object):
                 print("\nWriter is not running, impossible to stop(). "
                       "Please start it using the start() method.\n")
         # waits for is_running if wait=True
-        if 'success' in response and wait:
-            timeout_limit = time.time() + timeout
-            while self.is_running():
-                if time.time() > timeout_limit:
-                    print("WARNING!\n"
-                          "PCO writer did not report reaching the finished "
-                          "state within the timeout of {} s. ".format(timeout))
-                    break
-                time.sleep(0.15)
+        if response != 0:
+            if 'success' in response and wait:
+                timeout_limit = time.time() + timeout
+                while self.is_running():
+                    if time.time() > timeout_limit:
+                        print("WARNING!\n"
+                            "PCO writer did not report reaching the finished "
+                            "state within the timeout of {} s. ".format(timeout))
+                        break
+                    time.sleep(0.15)
         self.status = self.get_status()
         return response
 
@@ -985,7 +986,7 @@ class PcoWriter(object):
                 time.sleep(0.1)
         except KeyboardInterrupt:
             pass
-
+        print("\n")
         self.status = self.get_status()
 
         if verbose:
