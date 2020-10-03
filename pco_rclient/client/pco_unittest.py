@@ -60,7 +60,7 @@ def get_caput_cmd(ioc_name, command):
     return str(ioc_name+command)
 # starts the camera transfer
 def start_cam_transfer(n_frames=nframes):
-    caput(get_caput_cmd(ioc_name, COMMANDS["SAVESTOP"]), nframes) # Sets the number of frames to transfer
+    caput(get_caput_cmd(ioc_name, COMMANDS["SAVESTOP"]), n_frames) # Sets the number of frames to transfer
     caput(get_caput_cmd(ioc_name, COMMANDS["CAMERA"]), 1) # Starts the camera
     time.sleep(1)
     caput(get_caput_cmd(ioc_name, COMMANDS["FTRANSFER"]), 1) # Starts the transfer

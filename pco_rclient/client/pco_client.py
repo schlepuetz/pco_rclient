@@ -665,7 +665,6 @@ class PcoWriter(object):
         else:
             # Return the status of the client object itself.
             status = self.status
-
         return status
 
     def get_status_last_run(self):
@@ -877,7 +876,7 @@ class PcoWriter(object):
         self.status = self.get_status()
         return response
 
-    def stop(self, verbose=False):
+    def stop(self, wait=True, timeout=10,verbose=False):
         """
         Stop the writer process
 
@@ -912,6 +911,17 @@ class PcoWriter(object):
             if verbose:
                 print("\nWriter is not running, impossible to stop(). "
                       "Please start it using the start() method.\n")
+        # waits for is_running if wait=True
+        if response != 0:
+            if 'success' in response and wait:
+                timeout_limit = time.time() + timeout
+                while self.is_running():
+                    if time.time() > timeout_limit:
+                        print("WARNING!\n"
+                            "PCO writer did not report reaching the finished "
+                            "state within the timeout of {} s. ".format(timeout))
+                        break
+                    time.sleep(0.15)
         self.status = self.get_status()
         return response
 
@@ -979,7 +989,7 @@ class PcoWriter(object):
                 time.sleep(0.1)
         except KeyboardInterrupt:
             pass
-
+        print("\n")
         self.status = self.get_status()
 
         if verbose:
@@ -997,6 +1007,7 @@ class PcoWriter(object):
         be smaller than the total number of frames to be received by the
         writer. If the writer finishes before reaching this number, the wait is
         also finished.
+
 
         Parameters
         ----------
@@ -1070,5 +1081,4 @@ class PcoWriter(object):
                 print("\nWriter is not running anymore, exiting wait().\n")
             else:
                 print("\nWriter is still running, exiting wait().\n")
-
         return True
